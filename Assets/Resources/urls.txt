@@ -1,0 +1,3 @@
+http://worldtimeapi.org/api/ip
+https://timeapi.io/api/Time/current/ip
+https://timeapi.io/api/Time/current/coordinate
