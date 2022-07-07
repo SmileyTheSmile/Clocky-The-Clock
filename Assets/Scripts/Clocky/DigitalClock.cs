@@ -15,10 +15,10 @@ namespace Clocky
 
         public void Update()
         {
-            string hoursStr = string.Format("{0:00}", _timeSO.hours);
-            string minutesStr = string.Format("{0:00}", _timeSO.minutes);
-            string secondsStr = string.Format("{0:00}", _timeSO.seconds);
-            string millisecondsStr = string.Format("{0:000}", _timeSO.milliseconds);
+            string hoursStr = string.Format("{0:00}", _timeSO.Hours);
+            string minutesStr = string.Format("{0:00}", _timeSO.Minutes);
+            string secondsStr = string.Format("{0:00}", _timeSO.Seconds);
+            string millisecondsStr = string.Format("{0:000}", _timeSO.Milliseconds);
 
             _text.text = $"{hoursStr}.{minutesStr}.{secondsStr}.{millisecondsStr}";
         }

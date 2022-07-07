@@ -10,7 +10,7 @@ namespace Clocky
 
         public void Start()
         {
-            _timezoneText.text = _timeSO.timezone;
+            _timezoneText.text = _timeSO.Timezone;
         }
     }
 }

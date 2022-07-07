@@ -1,75 +1,124 @@
 using System;
-using System.Collections;
 using UnityEngine;
-using UnityEngine.Networking;
-using Newtonsoft.Json.Linq;
+using Web;
 
 namespace Clocky
 {
     public class TimeManager : MonoBehaviour
     {
         [SerializeField] private ScriptableTime _timeSO;
-        [SerializeField] private TextAsset _apiFile;
+        [SerializeField] private UpdatePeriod _whenToUpdate;
 
         private string _worldApiByIP = "http://worldtimeapi.org/api/ip";
         private string _timeApiByIP = "https://timeapi.io/api/Time/current/ip";
         private string _timeApiByCoordinate = "https://timeapi.io/api/Time/current/coordinate";
 
-        private string _jsonResult = null;
+        private float _lastUpdate;
+        private bool _currentlyUpdating;
 
-        private void Awake()
+        private void Start()
         {
-            StartCoroutine("GetRequest", _worldApiByIP);
+            _timeSO.UpdateValues(DateTime.Now, TimeZoneInfo.Local.ToString());
+            VerifyTime();
         }
 
         private void Update()
         {
+            float timeSinceLastUpdate = Time.fixedTime - _lastUpdate;
+
+            if (timeSinceLastUpdate >= (int)_whenToUpdate && !_currentlyUpdating)
+                VerifyTime();
+
+            TimeSpan timeElapsed = TimeSpan.FromSeconds(timeSinceLastUpdate);
+            _timeSO.CurrentTime = _timeSO.CurrentTimeSolid.Add(timeElapsed);
+        }
+
+        [ContextMenu("Test Conection")]
+        public async void VerifyTime()
+        {
+            _currentlyUpdating = true;
+            WebClient httpClient = new WebClient(new JsonSerializationOption());
+
+            WebAPI result = await httpClient.Get<TimeAPI>(_timeApiByIP);
+            if (result == default)
+                result = await httpClient.Get<WorldTimeAPI>(_worldApiByIP);
+                if (result == default)
+                    result = await httpClient.Get<TimeAPI>(_timeApiByCoordinate);
+
+            DateTime time = (result != default) ? DateTime.Parse(result.DateTime) : DateTime.Now;
+            string timezone = (result != default) ? result.TimeZone : TimeZoneInfo.Local.ToString();
+
+            TimeSpan error = _timeSO.CurrentTime.Subtract(time);
+            Debug.Log($"Time has been updated. The error was {error}.");
+
+            _timeSO.UpdateValues(time, timezone);
+            _lastUpdate = Time.fixedTime;
+            _currentlyUpdating = false;
+        }
+
+        /*private UrlAndAPI _worldApiByIP2 = new UrlAndAPI("http://worldtimeapi.org/api/ip", new WorldTimeAPI());
+        private UrlAndAPI _timeApiByIP2 = new UrlAndAPI("https://timeapi.io/api/Time/current/ip", new TimeAPI());
+        private UrlAndAPI _timeApiByCoordinate2 = new UrlAndAPI("https://timeapi.io/api/Time/current/coordinate", new TimeAPI());
+        
+        [ContextMenu("Test Conection")]
+        public async void VerifyCurrentInfoDeprecated() //TODO This a generalized function for however many APIs I want to add, but it doesn't work
+        {
+            List<UrlAndAPI> urlsAndApis = new List<UrlAndAPI>();
+            var httpClient = new WebClient(new JsonSerializationOption());
+
             DateTime time = DateTime.Now;
             string timezone = TimeZoneInfo.Local.ToString();
 
-            var jo = new JObject();
-            if (_jsonResult != null)
-                jo = JObject.Parse(_jsonResult);
+            urlsAndApis.Add(_worldApiByIP2);
+            urlsAndApis.Add(_timeApiByIP2);
+            urlsAndApis.Add(_timeApiByCoordinate2);
 
-            Debug.Log(jo);
-
-            _timeSO.hours = time.Hour;
-            _timeSO.minutes = time.Minute;
-            _timeSO.seconds = time.Second;
-            _timeSO.milliseconds = time.Millisecond;
-            _timeSO.timezone = timezone;
-        }
-
-        private IEnumerator GetRequest(string url)
-        {
-            using (UnityWebRequest webRequest = UnityWebRequest.Get(url))
+            foreach (var pair in urlsAndApis)
             {
-                yield return webRequest.SendWebRequest();
-                while (!webRequest.isDone)
-                {
-                    Debug.Log($"Connecting to {url}");
-                    yield return null;
-                }
+                Type api = pair.Api.GetType();
+                var result = await httpClient.Get<WebAPI>(pair.Url);
 
-                switch (webRequest.result)
+                if (result != default)
                 {
-                    case UnityWebRequest.Result.ConnectionError:
-                    case UnityWebRequest.Result.DataProcessingError:
-                        Debug.LogError($"Error: {webRequest.error}");
-                        break;
-                    case UnityWebRequest.Result.ProtocolError:
-                        Debug.LogError($"HTTP Error: {webRequest.error}");
-                        break;
-                    case UnityWebRequest.Result.Success:
-                        _jsonResult = webRequest.downloadHandler.text;
-                        Debug.Log($"Received: {webRequest.downloadHandler.text}");
-                        break;
+                    time = DateTime.Parse(result.DateTime);
+                    timezone = result.TimeZone;
+                    return;
                 }
             }
         }
 
-        private class WorldTimeAPI
+        private class UrlAndAPI
         {
+            public string Url;
+            public WebAPI Api;
+
+            public UrlAndAPI(string url, WebAPI api)
+            {
+                Url = url;
+                Api = api;
+            }
+        }*/
+
+        private enum UpdatePeriod
+        {
+            tenSeconds = 10,
+            halfAMinute = 30,
+            minute = 60,
+            tenMinutes = 600,
+            hour = 3600,
+        }
+
+        private interface WebAPI
+        {
+            public string DateTime { get; }
+            public string TimeZone { get; }
+        }
+
+        private class WorldTimeAPI : WebAPI
+        {
+            public string DateTime => datetime;
+            public string TimeZone => timezone;
+
             public string abbreviation = "";
             public string client_ip = "";
             public string datetime = "";
@@ -87,8 +136,11 @@ namespace Clocky
             public string week_number = "";
         }
 
-        private class TimeAPI
+        private class TimeAPI : WebAPI
         {
+            public string DateTime => dateTime;
+            public string TimeZone => timeZone;
+
             public string year = "";
             public string month = "";
             public string day = "";

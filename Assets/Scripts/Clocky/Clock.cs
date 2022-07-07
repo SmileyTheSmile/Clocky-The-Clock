@@ -10,18 +10,18 @@ namespace Clocky
         [SerializeField] private RectTransform _hoursHand;
         [SerializeField] private RectTransform _handsPivot;
 
-        public void Start()
+        private void Start()
         {
             SetHandPivots();
             Update();
         }
 
-        public void Update()
+        private void Update()
         {
-            float millisecondsNormalized = _timeSO.milliseconds / 1000f;
-            float secondsNormalized = (_timeSO.seconds + millisecondsNormalized) / 60f;
-            float minutesNormalized = (_timeSO.minutes + secondsNormalized) / 60f;
-            float hoursNormalized = (_timeSO.hours + minutesNormalized) / 12f;
+            float millisecondsNormalized = _timeSO.Milliseconds / 1000f;
+            float secondsNormalized = (_timeSO.Seconds + millisecondsNormalized) / 60f;
+            float minutesNormalized = (_timeSO.Minutes + secondsNormalized) / 60f;
+            float hoursNormalized = (_timeSO.Hours + minutesNormalized) / 12f;
 
             _secondsHand.rotation = Quaternion.Euler(0, 0, 360f * -secondsNormalized);
             _minutesHand.rotation = Quaternion.Euler(0, 0, 360f * -minutesNormalized);

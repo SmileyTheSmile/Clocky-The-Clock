@@ -7,6 +7,7 @@ namespace Clocky
     public class AlarmMenu : MonoBehaviour
     {
         [SerializeField] private ScriptableTime _timeSO;
+        [SerializeField] private Button _alarmButton;
         [SerializeField] private Slider _secondsSlider;
         [SerializeField] private Slider _minutesSlider;
         [SerializeField] private Slider _hoursSlider;
@@ -29,13 +30,13 @@ namespace Clocky
 
         public void Update()
         {
-            _secondsText.text = _timeSO.seconds.ToString();
-            _minutesText.text = _timeSO.minutes.ToString();
-            _hoursText.text = _timeSO.hours.ToString();
+            _secondsText.text = _timeSO.Seconds.ToString();
+            _minutesText.text = _timeSO.Minutes.ToString();
+            _hoursText.text = _timeSO.Hours.ToString();
 
-            _secondsSlider.value = (int)_timeSO.seconds;
-            _minutesSlider.value = (int)_timeSO.minutes;
-            _hoursSlider.value = (int)_timeSO.hours;
+            _secondsSlider.value = (int)_timeSO.Seconds;
+            _minutesSlider.value = (int)_timeSO.Minutes;
+            _hoursSlider.value = (int)_timeSO.Hours;
         }
     }
 }
